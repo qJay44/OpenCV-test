@@ -1,51 +1,31 @@
-#include <vector>
+#include <cstdlib>
+#include <cstdio>
+#include <format>
 
-int main() {
-  sf::RenderWindow window;
-  sf::Font font;
-  std::vector<sf::RectangleShape> grid;
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
 
-  // Setup main window
-  window.create(sf::VideoMode(WIDTH, HEIGHT), "Template text", sf::Style::Close);
-  window.setFramerateLimit(90);
-
-  // Font for some test text
-  font.loadFromFile("../../src/fonts/Minecraft rus.ttf");
-
-  grid.resize(ROWS * COLUMNS);
-  grid.reserve(ROWS * COLUMNS);
-
-  int scale = 255 / ROWS;
-  for (int x = 0; x < COLUMNS; x++) {
-    for (int y = 0; y < ROWS; y++) {
-      sf::RectangleShape& rect = grid[x + y * COLUMNS];
-      rect.setPosition(sf::Vector2f{sf::Vector2i{x * CELL_SIZE, y * CELL_SIZE}});
-      rect.setSize({CELL_SIZE, CELL_SIZE});
-      rect.setFillColor(sf::Color(255, 255, 255, scale * y));
-    }
+int main(int argc, char** argv) {
+  if(argc != 2) {
+    printf("%s", std::format("Usage example:\t{} img/exampleImage.png", argv[0]).c_str());
+    return EXIT_FAILURE;
   }
 
-  while (window.isOpen()) {
-    sf::Event event;
-    while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed)
-        window.close();
+  cv::Mat image;
+  image = imread(argv[1], cv::IMREAD_COLOR); // Read the file
 
-      if (event.type == sf::Event::KeyReleased)
-        switch (event.key.code) {
-          case sf::Keyboard::Q:
-            window.close();
-            break;
-          default:
-            break;
-        }
-    }
-
-    window.clear();
-    for (const sf::RectangleShape& rect : grid) window.draw(rect);
-    window.display();
+  // Check for invalid input
+  if(image.empty()) {
+    printf("Could not open or find the image");
+    return EXIT_FAILURE;
   }
 
-	return 0;
+  namedWindow("Display window", cv::WINDOW_AUTOSIZE); // Create a window for display.
+  imshow("Display window", image ); // Show our image inside it.
+
+  cv::waitKey(0); // Wait for a keystroke in the window
+
+  return EXIT_SUCCESS;
 }
 
