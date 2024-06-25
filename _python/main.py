@@ -1,60 +1,23 @@
 import cv2 as cv
-import numpy as np
+from windowcapture import *
+from time import time
 
-LINE_COLOR = (0, 255, 0)
-LINE_THICKNESS = 1
-LINE_TYPE = cv.LINE_4
-MARKER_COLOR = (255, 0, 255)
-MARKER_TYPE = cv.MARKER_CROSS
+print(WindowCapture.getVisibleWindows())
+winCap = WindowCapture(0x20476)
+lastTime = time() + 1.
 
-DEBUG_MODE_RECTANGLES = 0x1
-DEBUG_MODE_POINTS = 0x2
+while True:
+    currentTime = time()
+    deltaTime = currentTime - lastTime
+    print(f'FPS: ', int(1. / deltaTime), sep='', end='\r', flush=True)
 
-def findClickPositions(mainImgPath, subImgSubPath, threshold = 0.5, debugMode: np.uint = 0):
-    # Read images
-    img = cv.imread(mainImgPath, cv.IMREAD_UNCHANGED)
-    imgSub = cv.imread(subImgSubPath, cv.IMREAD_UNCHANGED)
+    cv.imshow('Compture Vision', winCap.getScreenshot())
 
-    # Validate parameters
-    if img is None or imgSub is None:
-        exit(1)
-    threshold = max(min(threshold, 1.), 0.)
+    if cv.waitKey(1) == ord('q') or not cv.getWindowProperty('Compture Vision', cv.WND_PROP_VISIBLE):
+        break
 
-    wImgSub = imgSub.shape[1]
-    hImgSub = imgSub.shape[0]
+    lastTime = currentTime
 
-    # Find points
-    result = cv.matchTemplate(img, imgSub, cv.TM_CCOEFF_NORMED)
-    locations = np.where(result >= threshold)
-    locations = list(zip(*locations[::-1]))
-
-    # Remove overlapping rectangles by groping them
-    rectangles = []
-    for x, y in locations:
-        rect = [x, y, wImgSub, hImgSub]
-        rectangles.append(rect)
-        rectangles.append(rect) # If rectangle is single duplication will save it from removing
-    rectangles, _ = cv.groupRectangles(rectangles, 1, 0.5)
-
-    # Create a list with discovered points
-    if len(rectangles):
-        points = []
-        for x, y, w, h in rectangles:
-            center = (x + int(w * 0.5), y + int(h * 0.5))
-            points.append(center)
-
-            if debugMode & DEBUG_MODE_RECTANGLES:
-                cv.rectangle(img, (x, y), (x + w, y + h), LINE_COLOR, LINE_THICKNESS, LINE_TYPE)
-
-            if debugMode & DEBUG_MODE_POINTS:
-                cv.drawMarker(img, center, MARKER_COLOR, MARKER_TYPE)
-
-        if debugMode:
-            cv.imshow('Result', img)
-            cv.waitKey()
-
-    return points
-
-
-findClickPositions('albion_farm.jpg', 'albion_cabbage.jpg', debugMode=DEBUG_MODE_POINTS)
+cv.destroyAllWindows()
+print('\nDone')
 
