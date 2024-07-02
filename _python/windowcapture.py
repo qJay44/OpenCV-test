@@ -6,29 +6,25 @@ class WindowCapture:
     __BORDER_PIXELS = 8
     __TITLEBAR_PIXELS = 30
 
-    __winList: list[dict[str, str]] = []
-    __hwnd: int
-
-    __offsetX: int
-    __offsetY: int
-
-    # Capture the window with its handle number or its title name
-    def __init__(self, hwnd: int) -> None:
-        self.__hwnd = hwnd
-        if not win32gui.IsWindowVisible(hwnd):
-            msg = f'(WindowCapture) The window is not visible (hwnd = {hex(hwnd)})'
-            raise Exception(msg)
+    # Capture the window by its handle number (or capture whole screen)
+    def __init__(self, hwnd = None) -> None:
+        if hwnd is None:
+            self.__hwnd = win32gui.GetDesktopWindow()
+        else:
+            self.__hwnd = hwnd
+            if not win32gui.IsWindowVisible(self.__hwnd):
+                msg = f'(WindowCapture) The window is not visible (hwnd = {hex(self.__hwnd)})'
+                raise Exception(msg)
 
     # Returns a list of dictionaries of window's hexadicimal handle and window's title name
-    @classmethod
-    def getVisibleWindows(cls) -> list[dict[str, str]]:
+    @staticmethod
+    def getVisibleWindows() -> list[dict[str, str]]:
+        winList = []
         def winEnumHandler(hwnd, _):
             if win32gui.IsWindowVisible(hwnd):
-                cls.__winList.append({hex(hwnd): win32gui.GetWindowText(hwnd)})
+                winList.append({hex(hwnd): win32gui.GetWindowText(hwnd)})
 
         win32gui.EnumWindows(winEnumHandler, None)
-        winList = cls.__winList.copy()
-        cls.__winList.clear()
 
         return winList
 
