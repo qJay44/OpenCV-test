@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 
 #include "WindowCapture.hpp"
@@ -30,32 +31,30 @@ void WindowCapture::printVisibleWindows() {
   EnumWindows(enumWindowCallback, NULL);
 }
 
+// Taking a screenshot from the whole screen then cropping the sub image from it
 cv::Mat WindowCapture::getScreenshot() const {
-  HDC hwindowDC,hwindowCompatibleDC;
-
-  int height,width,srcheight,srcwidth;
-  HBITMAP hbwindow;
   cv::Mat src;
-  BITMAPINFOHEADER bi;
+  HWND screenHWND = GetDesktopWindow();
 
-  hwindowDC = GetDC(hwnd);
-  hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
-  SetStretchBltMode(hwindowCompatibleDC,COLORONCOLOR);
+  // get handles to a device context (DC)
+  HDC hwindowDC = GetDC(screenHWND);
+  HDC hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
+  SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR);
 
-  RECT windowsize;    // get the height and width of the screen
-  GetClientRect(hwnd, &windowsize);
+  RECT appRect;
+  GetWindowRect(hwnd, &appRect);
+  int screenX = appRect.left;
+  int screenY = appRect.top;
+  int width = appRect.right - appRect.left;
+  int height = appRect.bottom - appRect.top;
 
-  float valueOfChangeTheSizeOfTextAppsAndOtherItemsInWindowsDisplaySettings = 1.0f;
-  srcheight = (int)((float)windowsize.bottom * valueOfChangeTheSizeOfTextAppsAndOtherItemsInWindowsDisplaySettings);
-  srcwidth = (int)((float)windowsize.right * valueOfChangeTheSizeOfTextAppsAndOtherItemsInWindowsDisplaySettings);
-  height = windowsize.bottom/1;  //change this to whatever size you want to resize to
-  width = windowsize.right/1;
-
-  src.create(height,width,CV_8UC4);
+  // create mat object
+  src.create(height, width, CV_8UC4);
 
   // create a bitmap
-  hbwindow = CreateCompatibleBitmap( hwindowDC, width, height);
-  bi.biSize = sizeof(BITMAPINFOHEADER);    //http://msdn.microsoft.com/en-us/library/windows/window/dd183402%28v=vs.85%29.aspx
+  HBITMAP hbwindow = CreateCompatibleBitmap(hwindowDC, width, height);
+  BITMAPINFOHEADER bi;
+  bi.biSize = sizeof(BITMAPINFOHEADER);
   bi.biWidth = width;
   bi.biHeight = -height;  //this is the line that makes it draw upside down or not
   bi.biPlanes = 1;
@@ -69,14 +68,15 @@ cv::Mat WindowCapture::getScreenshot() const {
 
   // use the previously created device context with the bitmap
   SelectObject(hwindowCompatibleDC, hbwindow);
+
   // copy from the window device context to the bitmap device context
-  StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, srcwidth, srcheight, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
-  GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO *)&bi, DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
+  StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, screenX, screenY, width, height, SRCCOPY);  //change SRCCOPY to NOTSRCCOPY for wacky colors !
+  GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO*)&bi, DIB_RGB_COLORS);            //copy from hwindowCompatibleDC to hbwindow
 
   // avoid memory leak
-  DeleteObject (hbwindow);
+  DeleteObject(hbwindow);
   DeleteDC(hwindowCompatibleDC);
-  ReleaseDC(hwnd, hwindowDC);
+  ReleaseDC(screenHWND, hwindowDC);
 
   return src;
 }
