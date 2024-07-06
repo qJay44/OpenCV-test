@@ -6,21 +6,24 @@
 #include "WindowCapture.hpp"
 
 int main() {
-
   WindowCapture::printVisibleWindows();
-  WindowCapture win(0x00000000000205C2);
-  Vision vision("../../src/res/albion_cabbage.jpg");
+  WindowCapture win(0x0000000002520602);
+  Vision vision("../../src/res/test2.jpg");
+  cv::Mat img, result;
 
-  const cv::Mat img = win.getScreenshot();
-  cv::Mat result = img.clone();
+  while (true) {
+    img = win.getScreenshot();
+    result = img.clone();
 
-  vision.find(img, 0.4, 1.0);
-  vision.draw(result, DRAW_TYPE_RECTANGLE);
+    vision.clear();
+    vision.find(img, 0.8, 1.0);
+    vision.draw(result, DRAW_TYPE_RECTANGLE, cv::Scalar(255, 0, 255), 3);
 
-  cv::imshow("Result", result);
-  cv::waitKey();
-  /* while (cv::waitKey(1) != 'q' || cv::getWindowProperty("Result", cv::WND_PROP_VISIBLE)) { */
-  /* } */
+    cv::imshow("Result", result);
+
+    if (cv::waitKey(1) == 'q' || !cv::getWindowProperty("Result", cv::WND_PROP_VISIBLE))
+      break;
+  }
 
   return EXIT_SUCCESS;
 }

@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include "WindowCapture.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/imgproc/types_c.h"
 
 #define BORDER_PIXELS 8
 #define TITLEBAR_PIXELS 30
@@ -45,8 +47,8 @@ cv::Mat WindowCapture::getScreenshot() const {
   GetWindowRect(hwnd, &appRect);
   int screenX = appRect.left;
   int screenY = appRect.top;
-  int width = appRect.right - appRect.left;
-  int height = appRect.bottom - appRect.top;
+  int width   = appRect.right - appRect.left;
+  int height  = appRect.bottom - appRect.top;
 
   // create mat object
   src.create(height, width, CV_8UC4);
@@ -77,6 +79,9 @@ cv::Mat WindowCapture::getScreenshot() const {
   DeleteObject(hbwindow);
   DeleteDC(hwindowCompatibleDC);
   ReleaseDC(screenHWND, hwindowDC);
+
+  cv::cvtColor(src, src, CV_BGRA2BGR);
+  src.convertTo(src, CV_8UC3);
 
   return src;
 }
